@@ -4,8 +4,10 @@
 #include "Geometry.h"
 #include "Grid.h"
 
+#if PARALLEL
 // tbb includes
 #include "parallel_for.h"
+#endif
 
 // std includes
 #include <vector>

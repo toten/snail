@@ -8,8 +8,10 @@
 
 // tbb includes
 #include "ParallelTask.h"
+#if PARALLEL
 #include "task_scheduler_init.h"
 #include "blocked_range.h"
+#endif
 
 // system include.
 #include <stdio.h>
@@ -29,7 +31,7 @@ using namespace std;
 const Scalar CONFINEMENT = 1000.0f;
 
 #if !PARALLEL
-void computeIntersections(Grid& grid, int numOfRays, Ray* rays, List<F3d>& intersectPoints);
+void ComputeIntersections(Grid& grid, int numOfRays, Ray* rays, List<F3d>& intersectPoints);
 #endif
 
 void RayPreCompute(Ray& ray, const Grid& grid);
@@ -38,6 +40,8 @@ void* FileRead(const char* filename, int interval, std::vector<char*>& outList, 
 
 int main(int argc, char* argv[])
 {
+	printf("hello\n");
+
     if (argc != 4)
     {
         printf("Usage: ContestSample.exe geometry_input.txt ray_input.txt output.txt\n");
@@ -190,7 +194,7 @@ int main(int argc, char* argv[])
 	tbb::task_scheduler_init init;
 	tbb::parallel_for(tbb::blocked_range<int>(0, numOfRays), RayParallel(rays, &grid, intersectPoints), tbb::auto_partitioner());
 #else
-	computeIntersections(grid, numOfRays, rays, intersectPoints);
+	ComputeIntersections(grid, numOfRays, rays, intersectPoints);
 #endif
 
 	QueryPerformanceCounter(&performanceCount);
@@ -261,7 +265,7 @@ int main(int argc, char* argv[])
 }
 
 #if !PARALLEL
-void computeIntersections(Grid& grid, int numOfRays, Ray* rays, List<F3d>& intersectPoints)
+void ComputeIntersections(Grid& grid, int numOfRays, Ray* rays, List<F3d>& intersectPoints)
 {
 #if MORE_OUTPUT 
 	ofstream out;
@@ -361,7 +365,7 @@ void* FileRead(const char* filename, int interval, std::vector<char*>& outList, 
 
     // read all data into one buffer
     DWORD nNumberOfBytesRead;
-    HANDLE hFile = CreateFile(filename, GENERIC_READ,0,NULL,OPEN_EXISTING,NULL,NULL);
+    HANDLE hFile = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, NULL, NULL);
     ReadFile(hFile,pBuffer,buffersize,&nNumberOfBytesRead,NULL);
     CloseHandle(hFile);
 
