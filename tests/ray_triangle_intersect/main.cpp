@@ -40,7 +40,7 @@ void* FileRead(const char* filename, int interval, std::vector<char*>& outList, 
 
 int main(int argc, char* argv[])
 {
-	printf("hello\n");
+	printf("start...\n");
 
     if (argc != 4)
     {
@@ -256,6 +256,7 @@ int main(int argc, char* argv[])
 	cout << "write time: " << (Scalar)(endCount - startCount) / freqency << endl;
 	totalCount += endCount - startCount;
 	cout << "total: " << (Scalar)(totalCount) / freqency << endl;
+	cout << "intersection count: " << intersectPoints.size() << endl;
 
     // congratulations!!!
     // your program finished the intensive computation 
@@ -365,7 +366,7 @@ void* FileRead(const char* filename, int interval, std::vector<char*>& outList, 
 
     // read all data into one buffer
     DWORD nNumberOfBytesRead;
-    HANDLE hFile = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, NULL, NULL);
+    HANDLE hFile = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
     ReadFile(hFile,pBuffer,buffersize,&nNumberOfBytesRead,NULL);
     CloseHandle(hFile);
 
