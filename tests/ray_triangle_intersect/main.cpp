@@ -16,7 +16,9 @@
 // system include.
 #include <stdio.h>
 #include <time.h>
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include <fstream>
 #include <iostream>
@@ -36,7 +38,9 @@ void ComputeIntersections(Grid& grid, int numOfRays, Ray* rays, List<F3d>& inter
 
 void RayPreCompute(Ray& ray, const Grid& grid);
 
+#if ENABLE_UNUSED
 void* FileRead(const char* filename, int interval, std::vector<char*>& outList, unsigned int& numberOfGeom);
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -48,27 +52,43 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+#ifdef _WIN32
 	LARGE_INTEGER performanceCount;
     QueryPerformanceFrequency(&performanceCount);
     Scalar freqency = (Scalar)(performanceCount.QuadPart);
 
 	QueryPerformanceCounter(&performanceCount);
 	long long startCount = performanceCount.QuadPart;
-	long long endCount;
+	long long endCount = 0;
 	long long totalCount = 0;
+#else
+	const long long BILLION = 1000000000L;
+	timespec startTime;
+	clock_gettime(CLOCK_MONOTONIC, &startTime);
+	timespec lastTime = startTime;
+	timespec currentTime;
+#endif
 
     const char* geomFile = argv[1];
 	const char* rayFile = argv[2];
 	const char* outputFile = argv[3];
 
 	FILE *fp1 = NULL;
+#ifdef _WIN32
 	fopen_s(&fp1, geomFile, "rb");
+#else
+	fp1 = fopen64(geomFile, "rb");
+#endif
 	if (fp1 == NULL) {
 		printf("Can't open %s.\n", geomFile);
 		return -1;
 	}
 	FILE *fp2 = NULL;
+#ifdef _WIN32
 	fopen_s(&fp2, rayFile, "rb");
+#else
+	fp2 = fopen64(rayFile, "rb");
+#endif
 	if (fp2 == NULL) {
 		printf("Can't open %s.\n", rayFile);
 		return -1;
@@ -124,11 +144,17 @@ int main(int argc, char* argv[])
     }
 #endif
 
+#ifdef _WIN32
 	QueryPerformanceCounter(&performanceCount);
 	endCount = performanceCount.QuadPart;
 	cout << "read time: " << (Scalar)(endCount - startCount) / freqency << endl;
 	totalCount += endCount - startCount;
 	startCount = endCount;
+#else
+	clock_gettime(CLOCK_MONOTONIC, &currentTime);
+	cout << "read time: " << (Scalar)(currentTime.tv_sec - lastTime.tv_sec) + (Scalar)(currentTime.tv_nsec - lastTime.tv_nsec) / BILLION << endl;
+	lastTime = currentTime;
+#endif
 
     // this is the container for all the output intersection points
     // here we simply use std::vector as the container but you will
@@ -184,11 +210,17 @@ int main(int argc, char* argv[])
 		RayPreCompute(rays[i], grid);
 	}
 
+#ifdef _WIN32
 	QueryPerformanceCounter(&performanceCount);
 	endCount = performanceCount.QuadPart;
 	cout << "create grid time: " << (Scalar)(endCount - startCount) / freqency << endl;
 	totalCount += endCount - startCount;
 	startCount = endCount;
+#else
+	clock_gettime(CLOCK_MONOTONIC, &currentTime);
+	cout << "create grid time: " << (Scalar)(currentTime.tv_sec - lastTime.tv_sec) + (Scalar)(currentTime.tv_nsec - lastTime.tv_nsec) / BILLION << endl;
+	lastTime = currentTime;
+#endif
 
 #if PARALLEL
 	tbb::task_scheduler_init init;
@@ -197,11 +229,17 @@ int main(int argc, char* argv[])
 	ComputeIntersections(grid, numOfRays, rays, intersectPoints);
 #endif
 
+#ifdef _WIN32
 	QueryPerformanceCounter(&performanceCount);
 	endCount = performanceCount.QuadPart;
 	cout << "intersect time: " << (Scalar)(endCount - startCount) / freqency << endl;
 	totalCount += endCount - startCount;
 	startCount = endCount;
+#else
+	clock_gettime(CLOCK_MONOTONIC, &currentTime);
+	cout << "intersect time: " << (Scalar)(currentTime.tv_sec - lastTime.tv_sec) + (Scalar)(currentTime.tv_nsec - lastTime.tv_nsec) / BILLION << endl;
+	lastTime = currentTime;
+#endif
 
     // now computation finishes. All the intersection points are now in the container intersectPoints.
     // before we output results, we first delete the input data that we no longer use
@@ -209,13 +247,21 @@ int main(int argc, char* argv[])
 	delete[] triangles;	
 
     FILE* file;
-    fopen_s( &file,outputFile,"wb");
+#ifdef _WIN32
+    fopen_s(&file, outputFile, "wb");
+#else
+	file = fopen64(outputFile, "wb");
+#endif
 
     // we now output the results into the specified file
     long nBytes = long(intersectPoints.size());
     // can the length of the buffer exceed 128?
     char buf[128];
-    sprintf_s(buf,128,"%d\r\n",nBytes);
+#ifdef _WIN32
+    sprintf_s(buf, 128, "%d\r\n", nBytes);
+#else
+	sprintf(buf, "%ld\r\n", nBytes);
+#endif
     string s(buf);
 
 #if PARALLEL
@@ -251,12 +297,19 @@ int main(int argc, char* argv[])
 
     fclose(file);
 
+#ifdef _WIN32
 	QueryPerformanceCounter(&performanceCount);
 	endCount = performanceCount.QuadPart;
 	cout << "write time: " << (Scalar)(endCount - startCount) / freqency << endl;
 	totalCount += endCount - startCount;
 	cout << "total: " << (Scalar)(totalCount) / freqency << endl;
 	cout << "intersection count: " << intersectPoints.size() << endl;
+#else
+	clock_gettime(CLOCK_MONOTONIC, &currentTime);
+	cout << "write time: " << (Scalar)(currentTime.tv_sec - lastTime.tv_sec) + (Scalar)(currentTime.tv_nsec - lastTime.tv_nsec) / BILLION << endl;
+	cout << "total: " << (Scalar)(currentTime.tv_sec - startTime.tv_sec) + (Scalar)(currentTime.tv_nsec - startTime.tv_nsec) / BILLION << endl;
+	cout << "intersection count: " << intersectPoints.size() << endl;
+#endif
 
     // congratulations!!!
     // your program finished the intensive computation 
@@ -356,6 +409,7 @@ void RayPreCompute(Ray& ray, const Grid& grid)
 	}
 }
 
+#if ENABLE_UNUSED
 void* FileRead(const char* filename, int interval, std::vector<char*>& outList, unsigned int& numberOfGeom)
 {
     // query the size of the file
@@ -402,3 +456,4 @@ void* FileRead(const char* filename, int interval, std::vector<char*>& outList, 
     // to clean
     return pBuffer;
 }
+#endif
