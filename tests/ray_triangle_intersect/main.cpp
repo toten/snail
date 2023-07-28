@@ -303,13 +303,12 @@ int main(int argc, char* argv[])
 	cout << "write time: " << (Scalar)(endCount - startCount) / freqency << endl;
 	totalCount += endCount - startCount;
 	cout << "total: " << (Scalar)(totalCount) / freqency << endl;
-	cout << "intersection count: " << intersectPoints.size() << endl;
 #else
 	clock_gettime(CLOCK_MONOTONIC, &currentTime);
 	cout << "write time: " << (Scalar)(currentTime.tv_sec - lastTime.tv_sec) + (Scalar)(currentTime.tv_nsec - lastTime.tv_nsec) / BILLION << endl;
 	cout << "total: " << (Scalar)(currentTime.tv_sec - startTime.tv_sec) + (Scalar)(currentTime.tv_nsec - startTime.tv_nsec) / BILLION << endl;
-	cout << "intersection count: " << intersectPoints.size() << endl;
 #endif
+	cout << "triangle: " << numOfTriangles << ", ray:" << numOfRays << ", intersection count: " << intersectPoints.size() << endl;
 
     // congratulations!!!
     // your program finished the intensive computation 
